@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>פאזל מספרים - התאמת תרגילים ותוצאות</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f8ff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .description {
+            color: #34495e;
+            margin-bottom: 30px;
+            text-align: center;
+            max-width: 600px;
+        }
+
+        .game-container {
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            padding: 25px;
+            max-width: 900px;
+            width: 95%;
+            margin-bottom: 20px;
+        }
+
+        .level-select {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+            gap: 10px;
+        }
+
+        .level-btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 8px 16px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .level-btn:hover {
+            background-color: #2980b9;
+        }
+
+        .level-btn.active {
+            background-color: #e74c3c;
+        }
+
+        .game-board {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .board-section {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .puzzle-piece {
+            background-color: #ecf0f1;
+            border: 2px solid #bdc3c7;
+            border-radius: 10px;
+            padding: 15px;
+            min-width: 100px;
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            user-select: none;
+        }
+
+        .puzzle-piece:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 10px rgba(0,0,0,0.1);
+        }
+
+        .puzzle-piece.selected {
+            background-color: #3498db;
+            color: white;
+            border-color: #2980b9;
+        }
+
+        .puzzle-piece.matched {
+            background-color: #2ecc71;
+            color: white;
+            border-color: #27ae60;
+            cursor: default;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        button:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+        }
+
+        .timer-score {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .timer, .score, .moves {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+        
+        .modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+        }
+        
+        .modal h2 {
+            color: #2c3e50;
+            margin-top: 0;
+        }
+        
+        .star-rating {
+            color: #f1c40f;
+            font-size: 40px;
+            margin: 20px 0;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        th, td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+        
+        th {
+            background-color: #f2f2f2;
+        }
+        
+        @media (max-width: 768px) {
+            .puzzle-piece {
+                min-width: 80px;
+                font-size: 18px;
+                padding: 12px;
+            }
+            
+            .board-section {
+                gap: 10px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .puzzle-piece {
+                min-width: 65px;
+                font-size: 16px;
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>פאזל מספרים</h1>
+    <p class="description">התאם בין התרגילים לתוצאות המתאימות! בחר תרגיל ואחריו את התוצאה המתאימה כדי ליצור זוג.</p>
+    
+    <div class="game-container">
+        <div class="level-select">
+            <button class="level-btn active" data-level="easy">קל</button>
+            <button class="level-btn" data-level="medium">בינוני</button>
+            <button class="level-btn" data-level="hard">קשה</button>
+        </div>
+        
+        <div class="timer-score">
+            <div class="timer">זמן: <span id="time">00:00</span></div>
+            <div class="moves">מהלכים: <span id="moves">0</span></div>
+            <div class="score">ניקוד: <span id="score">0</span></div>
+        </div>
+        
+        <div class="game-board">
+            <div class="board-section" id="equations"></div>
+            <div class="board-section" id="results"></div>
+        </div>
+        
+        <div class="controls">
+            <button id="reset-btn">התחל מחדש</button>
+            <button id="hint-btn">רמז</button>
+        </div>
+    </div>
+
+    <!-- Modal for level completion -->
+    <div class="modal" id="levelComplete">
+        <div class="modal-content">
+            <h2>כל הכבוד!</h2>
+            <p>השלמת את הרמה בהצלחה!</p>
+            <div class="star-rating" id="stars">★★★</div>
+            <div id="completion-stats">
+                <table>
+                    <tr>
+                        <th>זמן</th>
+                        <th>מהלכים</th>
+                        <th>ניקוד</th>
+                    </tr>
+                    <tr>
+                        <td id="final-time">00:45</td>
+                        <td id="final-moves">12</td>
+                        <td id="final-score">850</td>
+                    </tr>
+                </table>
+            </div>
+            <button id="next-level-btn">המשך לרמה הבאה</button>
+        </div>
+    </div>
+
+    <script>
+        // Game data
+        const levels = {
+            easy: {
+                equations: [
+                    "5 + 3", "7 - 2", "4 × 2", "10 ÷ 2", "3 × 3", "6 + 4"
+                ],
+                results: [
+                    "8", "5", "8", "5", "9", "10"
+                ]
+            },
+            medium: {
+                equations: [
+                    "12 + 15", "24 - 9", "7 × 3", "32 ÷ 4", "18 - 5", "6 × 4"
+                ],
+                results: [
+                    "27", "15", "21", "8", "13", "24"
+                ]
+            },
+            hard: {
+                equations: [
+                    "23 + 19", "47 - 28", "12 × 5", "72 ÷ 9", "125 - 76", "13 × 7"
+                ],
+                results: [
+                    "42", "19", "60", "8", "49", "91"
+                ]
+            }
+        };
+
+        // Game state
+        let currentLevel = "easy";
+        let selectedPiece = null;
+        let matchedPairs = 0;
+        let moves = 0;
+        let score = 0;
+        let startTime;
+        let timerInterval;
+        let hintsUsed = 0;
+        
+        // DOM elements
+        const equationsContainer = document.getElementById("equations");
+        const resultsContainer = document.getElementById("results");
+        const levelButtons = document.querySelectorAll(".level-btn");
+        const resetButton = document.getElementById("reset-btn");
+        const hintButton = document.getElementById("hint-btn");
+        const timeDisplay = document.getElementById("time");
+        const movesDisplay = document.getElementById("moves");
+        const scoreDisplay = document.getElementById("score");
+        const modalElement = document.getElementById("levelComplete");
+        const finalTimeDisplay = document.getElementById("final-time");
+        const finalMovesDisplay = document.getElementById("final-moves");
+        const finalScoreDisplay = document.getElementById("final-score");
+        const starsDisplay = document.getElementById("stars");
+        const nextLevelButton = document.getElementById("next-level-btn");
+
+        // Initialize game
+        function initGame() {
+            clearInterval(timerInterval);
+            startTimer();
+            resetGameState();
+            setupBoard();
+        }
+
+        function resetGameState() {
+            selectedPiece = null;
+            matchedPairs = 0;
+            moves = 0;
+            score = 0;
+            hintsUsed = 0;
+            updateStats();
+        }
+
+        function startTimer() {
+            startTime = new Date();
+            timerInterval = setInterval(updateTimer, 1000);
+        }
+
+        function updateTimer() {
+            const currentTime = new Date();
+            const elapsedTime = Math.floor((currentTime - startTime) / 1000);
+            const minutes = Math.floor(elapsedTime / 60);
+            const seconds = elapsedTime % 60;
+            timeDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function updateStats() {
+            movesDisplay.textContent = moves;
+            scoreDisplay.textContent = score;
+        }
+
+        function setupBoard() {
+            // Clear previous board
+            equationsContainer.innerHTML = "";
+            resultsContainer.innerHTML = "";
+
+            const levelData = levels[currentLevel];
+            
+            // Create and shuffle equations
+            const shuffledEquations = [...levelData.equations].sort(() => Math.random() - 0.5);
+            
+            shuffledEquations.forEach(equation => {
+                const piece = createPuzzlePiece(equation, "equation");
+                equationsContainer.appendChild(piece);
+            });
+            
+            // Create and shuffle results
+            const shuffledResults = [...levelData.results].sort(() => Math.random() - 0.5);
+            
+            shuffledResults.forEach(result => {
+                const piece = createPuzzlePiece(result, "result");
+                resultsContainer.appendChild(piece);
+            });
+        }
+
+        function createPuzzlePiece(content, type) {
+            const piece = document.createElement("div");
+            piece.className = "puzzle-piece";
+            piece.textContent = content;
+            piece.dataset.type = type;
+            piece.dataset.content = content;
+            
+            piece.addEventListener("click", () => handlePieceClick(piece));
+            
+            return piece;
+        }
+
+        function handlePieceClick(piece) {
+            // Ignore if piece is already matched
+            if (piece.classList.contains("matched")) {
+                return;
+            }
+            
+            // If no piece is selected or clicking the same piece, update selection
+            if (!selectedPiece || selectedPiece === piece) {
+                if (selectedPiece === piece) {
+                    // Deselect
+                    piece.classList.remove("selected");
+                    selectedPiece = null;
+                } else {
+                    // Select new piece
+                    if (selectedPiece) {
+                        selectedPiece.classList.remove("selected");
+                    }
+                    piece.classList.add("selected");
+                    selectedPiece = piece;
+                }
+                return;
+            }
+            
+            // If we have a selection, check if it's a valid pair
+            moves++;
+            updateStats();
+            
+            // Can't match two pieces of the same type
+            if (selectedPiece.dataset.type === piece.dataset.type) {
+                selectedPiece.classList.remove("selected");
+                piece.classList.add("selected");
+                selectedPiece = piece;
+                return;
+            }
+            
+            // Check if the pair matches
+            const equation = selectedPiece.dataset.type === "equation" ? 
+                selectedPiece.dataset.content : piece.dataset.content;
+                
+            const result = selectedPiece.dataset.type === "result" ? 
+                selectedPiece.dataset.content : piece.dataset.content;
+                
+            // Get equation index
+            const equationIndex = levels[currentLevel].equations.indexOf(equation);
+            
+            // Check if the result matches the equation
+            if (equationIndex !== -1 && levels[currentLevel].results[equationIndex] === result) {
+                // Match found!
+                selectedPiece.classList.remove("selected");
+                selectedPiece.classList.add("matched");
+                piece.classList.add("matched");
+                
+                matchedPairs++;
+                score += 100 - (hintsUsed * 20);
+                updateStats();
+                
+                // Check if level is complete
+                if (matchedPairs === levels[currentLevel].equations.length) {
+                    setTimeout(levelComplete, 500);
+                }
+            } else {
+                // No match
+                selectedPiece.classList.remove("selected");
+                setTimeout(() => {
+                    score = Math.max(0, score - 10);
+                    updateStats();
+                }, 300);
+            }
+            
+            selectedPiece = null;
+        }
+
+        function levelComplete() {
+            clearInterval(timerInterval);
+            
+            // Calculate stars based on moves and hints
+            const totalPairs = levels[currentLevel].equations.length;
+            const minMoves = totalPairs;
+            const efficiency = minMoves / moves;
+            
+            let stars = 3;
+            if (efficiency < 0.7) stars = 2;
+            if (efficiency < 0.4) stars = 1;
+            
+            // Apply hint penalty
+            if (hintsUsed > 0) stars = Math.max(1, stars - 1);
+            
+            // Update modal content
+            finalTimeDisplay.textContent = timeDisplay.textContent;
+            finalMovesDisplay.textContent = moves;
+            finalScoreDisplay.textContent = score;
+            starsDisplay.textContent = "★".repeat(stars);
+            
+            // Show modal
+            modalElement.style.display = "flex";
+        }
+
+        function provideHint() {
+            if (selectedPiece && selectedPiece.dataset.type === "equation") {
+                const equation = selectedPiece.dataset.content;
+                const equationIndex = levels[currentLevel].equations.indexOf(equation);
+                
+                if (equationIndex !== -1) {
+                    const correctResult = levels[currentLevel].results[equationIndex];
+                    
+                    // Highlight the correct result briefly
+                    const resultElements = document.querySelectorAll("#results .puzzle-piece");
+                    
+                    resultElements.forEach(el => {
+                        if (el.textContent === correctResult && !el.classList.contains("matched")) {
+                            el.style.backgroundColor = "#f39c12";
+                            setTimeout(() => {
+                                el.style.backgroundColor = "";
+                            }, 1000);
+                        }
+                    });
+                    
+                    hintsUsed++;
+                    score = Math.max(0, score - 20);
+                    updateStats();
+                }
+            } else if (selectedPiece && selectedPiece.dataset.type === "result") {
+                const result = selectedPiece.dataset.content;
+                const resultIndex = levels[currentLevel].results.indexOf(result);
+                
+                if (resultIndex !== -1) {
+                    const correctEquation = levels[currentLevel].equations[resultIndex];
+                    
+                    // Highlight the correct equation briefly
+                    const equationElements = document.querySelectorAll("#equations .puzzle-piece");
+                    
+                    equationElements.forEach(el => {
+                        if (el.textContent === correctEquation && !el.classList.contains("matched")) {
+                            el.style.backgroundColor = "#f39c12";
+                            setTimeout(() => {
+                                el.style.backgroundColor = "";
+                            }, 1000);
+                        }
+                    });
+                    
+                    hintsUsed++;
+                    score = Math.max(0, score - 20);
+                    updateStats();
+                }
+            } else {
+                // If no piece is selected, flash a random unmatched pair
+                const unmatched = {
+                    equations: [],
+                    results: []
+                };
+                
+                document.querySelectorAll("#equations .puzzle-piece:not(.matched)").forEach(el => {
+                    unmatched.equations.push(el.dataset.content);
+                });
+                
+                if (unmatched.equations.length > 0) {
+                    const randomIndex = Math.floor(Math.random() * unmatched.equations.length);
+                    const equation = unmatched.equations[randomIndex];
+                    const equationIndex = levels[currentLevel].equations.indexOf(equation);
+                    
+                    // Highlight equation and its result
+                    const equationElements = document.querySelectorAll("#equations .puzzle-piece");
+                    equationElements.forEach(el => {
+                        if (el.textContent === equation) {
+                            el.style.backgroundColor = "#f39c12";
+                            setTimeout(() => {
+                                el.style.backgroundColor = "";
+                            }, 1000);
+                        }
+                    });
+                    
+                    const result = levels[currentLevel].results[equationIndex];
+                    const resultElements = document.querySelectorAll("#results .puzzle-piece");
+                    resultElements.forEach(el => {
+                        if (el.textContent === result) {
+                            el.style.backgroundColor = "#f39c12";
+                            setTimeout(() => {
+                                el.style.backgroundColor = "";
+                            }, 1000);
+                        }
+                    });
+                    
+                    hintsUsed++;
+                    score = Math.max(0, score - 20);
+                    updateStats();
+                }
+            }
+        }
+
+        // Event listeners
+        levelButtons.forEach(button => {
+            button.addEventListener("click", () => {
+                // Update active button
+                levelButtons.forEach(btn => btn.classList.remove("active"));
+                button.classList.add("active");
+                
+                // Set new level
+                currentLevel = button.dataset.level;
+                initGame();
+            });
+        });
+
+        resetButton.addEventListener("click", initGame);
+        hintButton.addEventListener("click", provideHint);
+        
+        nextLevelButton.addEventListener("click", () => {
+            modalElement.style.display = "none";
+            
+            // Move to next level if available
+            const levels = ["easy", "medium", "hard"];
+            const currentIndex = levels.indexOf(currentLevel);
+            
+            if (currentIndex < levels.length - 1) {
+                currentLevel = levels[currentIndex + 1];
+                levelButtons.forEach(btn => {
+                    btn.classList.remove("active");
+                    if (btn.dataset.level === currentLevel) {
+                        btn.classList.add("active");
+                    }
+                });
+            }
+            
+            initGame();
+        });
+
+        // Start the game
+        initGame();
+    </script>
+</body>
+</html>
